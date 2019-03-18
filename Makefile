@@ -8,7 +8,7 @@ OBJ = ./obj/
 INCLUDE = ./include/
 CC = gcc
 CFLAGS = -Wall -ansi -pedantic -g -I$(INCLUDE) --std=c99 -O2 -D ASD_PATH=\"$(ASD)\" -D VCFTOOLS_PATH=\"$(VCFTOOLS)\"
-LDFLAGS = -lgsl -lgslcblas -lm -lpthread
+LDFLAGS = $(shell pkg-config --libs gsl) -lpthread
 
 # definition of object files
 SOURCES = $(shell find $(SRC) -name "*.c")

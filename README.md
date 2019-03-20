@@ -5,6 +5,6 @@ MetHis is a population genetics forward simulation tool designed to simulate arb
 ## Requirements
 MetHis relies on :
 - GSL (>= 2.1)
-- R (>= 3.4)
+- R (>= 3.4) with e1071 package
 - asd ([asd page](https://github.com/szpiech/asd))
 - vcftools (>= 0.1.15, [vcftools page](https://vcftools.github.io/index.html))

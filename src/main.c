@@ -33,36 +33,6 @@ int main(int argc, char **argv){
   return EXIT_SUCCESS;
 }
 
-/* indiv **allocation_indiv_vector(unsigned size, unsigned nb_snp){ */
-/*   indiv **v = NULL; */
-/*   unsigned i; */
-/*   v = (indiv**) malloc(size * sizeof(indiv*)); */
-/*   check_alloc(v); */
-/*   for (i = 0; i < size; i++){ */
-/*     v[i] = allocation_indiv(nb_snp); */
-/*   } */
-/*   return v; */
-/* } */
-
-/* indiv *allocation_indiv(unsigned nb_snp){ */
-/*   indiv *i = NULL; */
-/*   i = (indiv*) malloc(sizeof(indiv)); */
-/*   check_alloc(i); */
-/*   i->parents = allocation_unsigned_vector(4); */
-/*   i->chroms = allocation_char_matrix(2, nb_snp); */
-/*   return i; */
-/* } */
-
-/* void free_indiv_vector(indiv **v, unsigned size){ */
-/*   unsigned i; */
-/*   for (i = 0; i < size; i++){ */
-/*     free(v[i]->parents); */
-/*     free_char_matrix(v[i]->chroms, 2); */
-/*     free(v[i]); */
-/*   } */
-/*   free(v); */
-/* } */
-
 
 /* creates a param structure with general log files etc */
 param *create_params(arg *args){
@@ -328,6 +298,8 @@ void print_usage(char *progname){
   fprintf(stderr, "\t\tDisplay this help and exit\n");
   fprintf(stderr, "\t--save-data\n");
   fprintf(stderr, "\t\tSave sampled genotypes at last generation (default=False)\n");
+  fprintf(stderr, "\t--sampling S1/ADM/S2\n");
+  fprintf(stderr, "\t\tNumber of individuals to sample for summary statistics computations (default=100/100/100)\n");
   fprintf(stderr, "\t--nb-snp N\n");
   fprintf(stderr, "\t\tNumber of SNP to simulate (default=50000)\n");
   fprintf(stderr, "\t--prefix\n");

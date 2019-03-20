@@ -91,7 +91,7 @@ void finalize_stats_computation(param *params, arg *args, unsigned idx_gen){
   fprintf(stderr, "Finalizing summary statistics computations...\n");
   fprintf(params->simul_log, "Finalizing summary statistics computations...\n");
   command = allocation_char_vector(LARGE_BUFF_SIZE);
-  sprintf(command, "/usr/bin/Rscript R_codes/finalize_sumstats.R %s %u %u", args->prefix, params->current_simul, idx_gen);
+  sprintf(command, "/usr/bin/%s R_codes/finalize_sumstats.R %s %u %u", RSCRIPT_PATH, args->prefix, params->current_simul, idx_gen);
   dummy = system(command);
   if (dummy != 0){
     fprintf(stderr, "It seems something went wrong during final sumstats computation\n");

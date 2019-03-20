@@ -1,13 +1,13 @@
 ASD = $(shell which asd)
 VCFTOOLS = $(shell which vcftools)
-
+RSCRIPT = $(shell which Rscript)
 
 TARGET = MetHis
 SRC = ./src/
 OBJ = ./obj/
 INCLUDE = ./include/
 CC = gcc
-CFLAGS = -Wall -ansi -pedantic -g -I$(INCLUDE) --std=c99 -O2 -D ASD_PATH=\"$(ASD)\" -D VCFTOOLS_PATH=\"$(VCFTOOLS)\"
+CFLAGS = -Wall -ansi -pedantic -g -I$(INCLUDE) --std=c99 -O2 -D ASD_PATH=\"$(ASD)\" -D VCFTOOLS_PATH=\"$(VCFTOOLS)\" -D RSCRIPT_PATH=\"$(RSCRIPT)\"
 LDFLAGS = $(shell pkg-config --libs gsl) -lpthread
 
 # definition of object files

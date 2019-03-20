@@ -21,7 +21,6 @@ unsigned **sample_individuals(param *params, arg *args, couple **couples);
 unsigned adm_indivs_share_chromosomes(couple *couple1, couple *couple2);
 unsigned adm_shares_chromosome_with_source(char *chrom1, char *chrom2, unsigned **wanted, couple **couples, unsigned nb_adm);
 void compute_asd_matrix(arg *args, param *params, unsigned idx_gen);
-void draw_MDS_plots(arg *args, param *params, unsigned idx_gen);
 void remove_temporary_files(arg *args, param *params, unsigned idx_gen);
 void remove_one_file(char *name);
 void compute_allelic_frequencies(param *params, arg *args, unsigned idx_gen);

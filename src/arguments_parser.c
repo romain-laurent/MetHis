@@ -22,17 +22,14 @@ arg *parse_arguments(int argc, char **argv){
   struct option long_options[] = {
     /* flag */
     {"help", no_argument, &(args->help), 1},
-    {"save_data", no_argument, &(args->save_data), 1},
-    {"force_rewrite", no_argument, &(args->force_rewrite), 1},
-    {"preview", no_argument, &(args->draw_preview), 1},
+    {"save-data", no_argument, &(args->save_data), 1},
     /* require arguments */
-    {"nb_snp", required_argument, 0, 'a'},
-    {"nb_simul", required_argument, 0, 'c'},
-    {"nb_thread", required_argument, 0, 'd'},
+    {"nb-snp", required_argument, 0, 'a'},
+    {"nb-simul", required_argument, 0, 'c'},
+    {"nb-thread", required_argument, 0, 'd'},
     {"sampling", required_argument, 0, 'e'},
-    {"input_path", required_argument, 0, 'f'},
+    {"input-path", required_argument, 0, 'f'},
     {"prefix", required_argument, 0, 'g'},
-    {"plots", required_argument, 0, 'l'},
     {0, 0, 0, 0}
   };
   
@@ -55,22 +52,22 @@ arg *parse_arguments(int argc, char **argv){
     case 0 :
       break;
     case 'a' :
-      args->nb_snp = get_unsigned_number(optarg, "nb_snp");
+      args->nb_snp = get_unsigned_number(optarg, "nb-snp");
       break;
     case 'c' :
       dummy = sscanf(optarg, "%[^-]-%s", dummy2, dummy3);
       if (dummy == 2){
-	args->idx_simul_deb = get_unsigned_number(dummy2, "nb_simul");
-	args->idx_simul_fin = get_unsigned_number(dummy3, "nb_simul");
+	args->idx_simul_deb = get_unsigned_number(dummy2, "nb-simul");
+	args->idx_simul_fin = get_unsigned_number(dummy3, "nb-simul");
       }
       else{
 	dummy = sscanf(optarg, "%s", dummy2);
 	args->idx_simul_deb = 1;
-	args->idx_simul_fin = get_unsigned_number(dummy2, "nb_simul");
+	args->idx_simul_fin = get_unsigned_number(dummy2, "nb-simul");
       }
       break;
     case 'd' :
-      args->nb_thread = get_unsigned_number(optarg, "nb_thread");
+      args->nb_thread = get_unsigned_number(optarg, "nb-thread");
       break;
     case 'e' :
       dummy = sscanf(optarg, "%[^/]/%[^/]/%s", dummy2, dummy3, dummy4);
@@ -83,9 +80,6 @@ arg *parse_arguments(int argc, char **argv){
       break;
     case 'g' :
       dummy = sscanf(optarg, "%s", args->prefix);
-      break;
-    case 'l':
-      args->draw_plots = parse_plots_argument(optarg);
       break;
     }
   }
@@ -107,32 +101,13 @@ void check_args(arg *args){
     exit_on_error(NULL, NO_CODE);
   }
   if (args->nb_thread == 0){
-    fprintf(stderr, "Error: nb_thread cannot be 0. Exiting.\n");
+    fprintf(stderr, "Error: nb-thread cannot be 0. Exiting.\n");
     exit_on_error(NULL, NO_CODE);
   }
   if (args->idx_simul_deb > args->idx_simul_fin){
-    fprintf(stderr, "Error: invalid argument for nb_simul. Exiting.\n");
+    fprintf(stderr, "Error: invalid argument for nb-simul. Exiting.\n");
     exit_on_error(NULL, NO_CODE);
   }
-}
-
-unsigned parse_plots_argument(char *option){
-  char *tmp = NULL;
-  unsigned val = 0;
-  tmp = allocation_char_vector(SMALL_BUFF_SIZE);
-  tmp = strncpy(tmp, option, SMALL_BUFF_SIZE);
-  if (strncmp(tmp, "None", SMALL_BUFF_SIZE) == 0)
-    val = PLOT_NONE;
-  else if (strncmp(tmp, "All_gen", SMALL_BUFF_SIZE) == 0)
-    val = PLOT_ALL;
-  else if (strncmp(tmp, "Last_gen", SMALL_BUFF_SIZE) == 0)
-    val = PLOT_LAST;
-  else{
-    fprintf(stderr, "Invalid argument for plots\n");
-    exit_on_error(NULL, NO_CODE);
-  }
-  free(tmp);
-  return val;
 }
 
 unsigned get_unsigned_number(char *str, char *option_name){

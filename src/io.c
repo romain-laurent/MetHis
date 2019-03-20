@@ -275,32 +275,19 @@ void write_arguments(arg *args, FILE *log){
   fprintf(log, "%s", line);
   fprintf(stderr, "Command line interpreted as:\n");
   fprintf(log, "Command line interpreted as:\n");
-  fprintf(stderr, "\tsave_data: %s\n", t_or_f(args->save_data));
-  fprintf(log, "\tsave_data: %s\n", t_or_f(args->save_data));
-  fprintf(stderr, "\tpreview: %s\n", t_or_f(args->draw_preview));
-  fprintf(log, "\tpreview: %s\n", t_or_f(args->draw_preview));
-  fprintf(stderr, "\tforce_rewrite: %s\n", t_or_f(args->force_rewrite));
-  fprintf(log, "\tforce_rewrite: %s\n", t_or_f(args->force_rewrite));
-  fprintf(stderr, "\tnb_snp: %u\n", args->nb_snp);
-  fprintf(log, "\tnb_snp: %u\n", args->nb_snp);
-  fprintf(stderr, "\tnb_simul: %u-%u\n", args->idx_simul_deb, args->idx_simul_fin);
-  fprintf(log, "\tnb_simul: %u-%u\n", args->idx_simul_deb, args->idx_simul_fin);
-  fprintf(stderr, "\tnb_thread: %u\n", args->nb_thread);
-  fprintf(log, "\tnb_thread: %u\n", args->nb_thread);
+  fprintf(stderr, "\tsave-data: %s\n", t_or_f(args->save_data));
+  fprintf(log, "\tsave-data: %s\n", t_or_f(args->save_data));
+  fprintf(stderr, "\tnb-snp: %u\n", args->nb_snp);
+  fprintf(log, "\tnb-snp: %u\n", args->nb_snp);
+  fprintf(stderr, "\tnb-simul: %u-%u\n", args->idx_simul_deb, args->idx_simul_fin);
+  fprintf(log, "\tnb-simul: %u-%u\n", args->idx_simul_deb, args->idx_simul_fin);
+  fprintf(stderr, "\tnb-thread: %u\n", args->nb_thread);
+  fprintf(log, "\tnb-thread: %u\n", args->nb_thread);
   fprintf(stderr, "\tsampling: %u/%u/%u\n", args->sample_size_s1, args->sample_size_adm, args->sample_size_s2);
   fprintf(log, "\tsampling: %u/%u/%u\n", args->sample_size_s1, args->sample_size_adm, args->sample_size_s2);
   /* now options which are a mess... */
-  /* plotting option */
-  if (args->draw_plots == PLOT_NONE)
-    line = strncpy(line, "None", MEDIUM_BUFF_SIZE);
-  else if (args->draw_plots == PLOT_ALL)
-    line = strncpy(line, "All_gen", MEDIUM_BUFF_SIZE);
-  else if (args->draw_plots == PLOT_LAST)
-    line = strncpy(line, "Last_gen", MEDIUM_BUFF_SIZE);
-  fprintf(stderr, "\tplots: %s\n", line);
-  fprintf(log, "\tplots: %s\n", line);
-  fprintf(stderr, "\tinput_path: %s\n", args->input_path);
-  fprintf(log, "\tinput_path: %s\n", args->input_path);
+  fprintf(stderr, "\tinput-path: %s\n", args->input_path);
+  fprintf(log, "\tinput-path: %s\n", args->input_path);
   free(line);
   free(line2);
 }

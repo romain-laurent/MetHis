@@ -51,7 +51,7 @@ void make_one_simul(param *params, arg *args){
     /* and now we make individuals reproduce */
     make_multithreaded_reproduction(params, couples, args->nb_thread, args->nb_snp);
     /* we sample individuals if we need them */
-    if (args->draw_plots == PLOT_ALL || idx_gen == args->nb_generation){
+    if (idx_gen == args->nb_generation){
       /* sample individuals */
       wanted_samples = sample_individuals(params, args, couples);
 
@@ -60,17 +60,9 @@ void make_one_simul(param *params, arg *args){
       write_tped_file(params, args, wanted_samples, idx_gen);
       /* we compute ASD matrix using external software */
             compute_asd_matrix(args, params, idx_gen);
-      /* if we want to draw plot */
-      if (args->draw_plots != PLOT_NONE)
-	draw_MDS_plots(args, params, idx_gen);
       /* write genotypes to vcf file */
       write_vcf_file(params, args, wanted_samples, idx_gen);
       compute_allelic_frequencies(params, args, idx_gen);
-
-      /* /\* create input for ADMIXTOOLS *\/ */
-      /* create_admixtools_inputs(params, args, idx_gen); */
-      /* /\* /\\* compute f3 statistic *\\/ *\/ */
-      /* compute_f3_stat(params, args); */
 
       compute_fst(params, args, idx_gen);
       compute_inbreeding(params, args, idx_gen);
@@ -276,24 +268,6 @@ void remove_one_file(char *name){
   if (dummy != 0){
     fprintf(stderr, "An error occured while removing \"%s\"\n", name);
   }
-}
-
-void draw_MDS_plots(arg *args, param *params, unsigned idx_gen){
-  char *command = NULL, *tmp = NULL;
-  int dummy;
-  fprintf(stderr, "Drawing MDS plots...\n");
-  fprintf(params->simul_log, "Drawing MDS plots...\n");
-  command = allocation_char_vector(LARGE_BUFF_SIZE);
-  tmp = allocation_char_vector(MEDIUM_BUFF_SIZE);
-  sprintf(tmp, "%s/simu_%u/simu_%u_g%u", args->prefix, params->current_simul, params->current_simul, idx_gen);
-  sprintf(command, "Rscript R_codes/plot_MDS.R %s > /dev/null 2> /dev/null", tmp);
-  dummy = system(command);
-  if (dummy != 0){
-    fprintf(stderr, "It seems something went wrong during MDS plotting\n");
-    fprintf(params->simul_log, "It seems something went wrong during MDS plotting\n");
-  }
-  free(command);
-  free(tmp);
 }
 
 void compute_asd_matrix(arg *args, param *params, unsigned idx_gen){

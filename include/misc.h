@@ -10,7 +10,6 @@
 /* definition of general codes */
 #define NO_CODE 0
 #define MEMALLOC_ERROR 1
-#define CREATE_DIR_ERROR 2
 #define FOPEN_ERROR 3
 #define SSIZE_ERROR 4
 #define PARSING_ERROR 5
@@ -18,15 +17,6 @@
 #define BIG_ROUNDING_ERROR 7
 #define PTHREAD_ERROR 8
 
-#define MOD_CON 0
-#define MOD_INC 1
-#define MOD_DEC 2
-#define MOD_ALL 3
-#define PLOT_NONE 0
-#define PLOT_LAST 1
-#define PLOT_ALL 2
-#define TREND_NONE 0
-#define TREND_EXP 1
 
 #define FLAG_ADM 0
 #define FLAG_S1 1
@@ -63,19 +53,10 @@ typedef struct param{
   unsigned current_simul;
   unsigned current_adm_Ne;
   unsigned prev_adm_Ne;
-  unsigned adm_Ne0;
-  unsigned adm_final_Ne_min;
-  unsigned adm_final_Ne_max;
   unsigned *adm_Ne_simul;
   unsigned *order_chroms_s1;
   unsigned *order_chroms_s2;
   unsigned *order_chroms_adm;
-  double contrib_0_min[2];
-  double contrib_0_max[2];
-  double contrib_1_min[2];
-  double contrib_1_max[2];
-  double contrib_final_min[2];
-  double contrib_final_max[2];
   double **contrib_simul;
   unsigned *wanted_snps;
   char **genos_adm_old;
@@ -113,20 +94,10 @@ typedef struct couple_param{
   unsigned *order_pop2;
 }couple_param;
 
-/* /\* structure containing infos for an admixed individual *\/ */
-/* typedef struct indiv{ */
-/*   unsigned *parents; */
-/*   char **chroms; */
-/* }indiv; */
-
-
 /* structure containing arguments from the command line */
 typedef struct arg{
   int help;
   int save_data;
-  int force_rewrite;
-  unsigned draw_plots;
-  int draw_preview;
   unsigned nb_snp;
   unsigned nb_generation;
   unsigned idx_simul_deb;
@@ -135,23 +106,6 @@ typedef struct arg{
   unsigned sample_size_s1;
   unsigned sample_size_s2;
   unsigned sample_size_adm;
-  unsigned adm_Ne0;
-  unsigned adm_Ne_model;
-  unsigned adm_final_Ne_default;
-  unsigned adm_final_Ne_min;
-  unsigned adm_final_Ne_max;
-  unsigned contrib_0_default[2];
-  double contrib_0[2];
-  unsigned contrib_model[2];
-  unsigned contrib_trend[2];
-  double contrib_trend_min[2];
-  double contrib_trend_max[2];
-  unsigned contrib_1_default[2];
-  double contrib_1_min[2];
-  double contrib_1_max[2];
-  unsigned contrib_final_default[2];
-  double contrib_final_min[2];
-  double contrib_final_max[2];
   char *input_path;
   char *prefix;
 }arg;
@@ -166,7 +120,6 @@ char *allocation_char_vector(unsigned size);
 void print_usage(char *progname);
 param *allocation_param(arg *args);
 param *create_params(arg *args);
-void create_directory(char *name, unsigned force_rewrite);
 FILE *safe_open(char *name, char *mode);
 void free_param(param *p, arg *args);
 gsl_rng **allocation_rng_vector(unsigned size);
@@ -176,9 +129,6 @@ unsigned *allocation_unsigned_vector(unsigned size);
 double **allocation_double_matrix(unsigned nb_row, unsigned nb_col);
 void free_double_matrix(double **m, unsigned nb_row);
 double *allocation_double_vector(unsigned size);
-/* indiv **allocation_indiv_vector(unsigned size, unsigned nb_snp); */
-/* indiv *allocation_indiv(unsigned nb_snp); */
-/* void free_indiv_vector(indiv **v, unsigned size); */
 couple_param *allocation_couple_param(void);
 void free_couple_param(couple_param *p);
 couple **allocation_couple_vector(unsigned size);

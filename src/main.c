@@ -169,16 +169,6 @@ FILE *safe_open(char *name, char *mode){
   return f;
 }
 
-/* creates a directory and captures errors */
-void create_directory(char *name, unsigned force_rewrite){
-  int dummy;
-  dummy = mkdir(name, 0775);
-  if (dummy == 0)
-    return;
-  if ((! force_rewrite) && errno == EEXIST)
-    exit_on_error(name, CREATE_DIR_ERROR);
-}
-
 /* allocation of param structure */
 param *allocation_param(arg *args){
   param *p = NULL;
@@ -262,9 +252,6 @@ arg *allocation_arg(void){
   a = (arg*) malloc(sizeof(arg));
   check_alloc(a);
   a->help = 0;
-  a->force_rewrite = 0;
-  a->draw_plots = PLOT_NONE;
-  a->draw_preview = 0;
   a->nb_snp = 50000;
   a->save_data = 0;
   a->nb_generation = 5;
@@ -278,33 +265,6 @@ arg *allocation_arg(void){
   a->prefix = allocation_char_vector(MEDIUM_BUFF_SIZE);
   a->input_path[0] = '\0';
   a->prefix[0] = '\0';
-  a->adm_Ne0 = 1000;
-  a->adm_Ne_model = MOD_CON;
-  a->adm_final_Ne_default = 1;
-  a->adm_final_Ne_min = 0;
-  a->adm_final_Ne_max = 0;
-  a->contrib_0_default[0] = 1;
-  a->contrib_0_default[1] = 1;
-  a->contrib_model[0] = MOD_CON;
-  a->contrib_model[1] = MOD_CON;
-  a->contrib_trend[0] = TREND_NONE;
-  a->contrib_trend[1] = TREND_NONE;
-  a->contrib_trend_min[0] = 0;
-  a->contrib_trend_min[1] = 0;
-  a->contrib_trend_max[0] = 0;
-  a->contrib_trend_max[1] = 0;
-  a->contrib_1_default[0] = 1;
-  a->contrib_1_default[1] = 1;
-  a->contrib_1_min[0] = 0;
-  a->contrib_1_max[0] = 0;
-  a->contrib_1_min[1] = 0;
-  a->contrib_1_max[1] = 0;
-  a->contrib_final_default[0] = 1;
-  a->contrib_final_default[1] = 1;
-  a->contrib_final_min[0] = 0;
-  a->contrib_final_max[0] = 0;
-  a->contrib_final_min[1] = 0;
-  a->contrib_final_max[1] = 0;
   return a;
 }
 
@@ -366,23 +326,17 @@ void print_usage(char *progname){
   fprintf(stderr, "Usage: %s OPTIONS\n", progname);
   fprintf(stderr, "\t--help\n");
   fprintf(stderr, "\t\tDisplay this help and exit\n");
-  fprintf(stderr, "\t--save_data\n");
+  fprintf(stderr, "\t--save-data\n");
   fprintf(stderr, "\t\tSave sampled genotypes at last generation (default=False)\n");
-  fprintf(stderr, "\t--preview\n");
-  fprintf(stderr, "\t\tDraw a plot of populations contribution at each generation (default=False)\n");
-  fprintf(stderr, "\t--force_rewrite\n");
-  fprintf(stderr, "\t\tErases and rewrites over directories that already exist (default=False)\n");
-  fprintf(stderr, "\t--nb_snp N\n");
+  fprintf(stderr, "\t--nb-snp N\n");
   fprintf(stderr, "\t\tNumber of SNP to simulate (default=50000)\n");
   fprintf(stderr, "\t--prefix\n");
   fprintf(stderr, "\t\tThe path where we will find all simulations directories\n");
-  fprintf(stderr, "\t--nb_simul N\n");
+  fprintf(stderr, "\t--nb-simul N\n");
   fprintf(stderr, "\t\tNumber of simulations to perform (default=1)\n");
-  fprintf(stderr, "\t--nb_thread N\n");
+  fprintf(stderr, "\t--nb-thread N\n");
   fprintf(stderr, "\t\tNumber of parallel processes to run (default=1)\n");
-  fprintf(stderr, "\t--plots [None|All_gen|Last_gen]\n");
-  fprintf(stderr, "\t\tDraws MDS based on ASD matrix (default=None)\n");
-  fprintf(stderr, "\t--input_path\n");
+  fprintf(stderr, "\t--input-path\n");
   fprintf(stderr, "\t\tPath to the input file containing genotypes for source populations 1 and 2 in Arlequin format (fsc output)\n");
   exit_on_error(NULL, NO_CODE);
 }
@@ -394,9 +348,6 @@ void exit_on_error(char *arg, unsigned error_code){
     break;
   case MEMALLOC_ERROR :
     fprintf(stderr, "Memory allocation error. Exiting\n");
-    break;
-  case CREATE_DIR_ERROR :
-    fprintf(stderr, "Directory %s already exists and force_rewrite is false. Exiting.\n", arg);
     break;
   case FOPEN_ERROR :
     fprintf(stderr, "Cannot open file %s. Exiting\n", arg);

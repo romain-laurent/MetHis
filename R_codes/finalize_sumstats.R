@@ -29,7 +29,6 @@ tryCatch(final.sumstats <- get.Fsts(path), error=function(e){invisible()}, warni
 
 
 ## F3 statistic, following Patterson 2012
-## does not give exactly the same result as qp3Pop (admixtools) for some reason...
 compute.F3 <- function(path, idx.simu, idx.gen){
     ## get allelic frequencies computed by vcftools
     p.adm <- read.table(sprintf('%s/simu_%s_g%s_adm.frq', path, idx.simu, idx.gen), header=TRUE, skip=1)[,6]

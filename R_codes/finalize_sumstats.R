@@ -36,9 +36,6 @@ compute.F3 <- function(path, idx.simu, idx.gen){
     p.s1 <- read.table(sprintf('%s/simu_%s_g%s_s1.frq', path, idx.simu, idx.gen), header=TRUE, skip=1)[,6]
     p.s2 <- read.table(sprintf('%s/simu_%s_g%s_s2.frq', path, idx.simu, idx.gen), header=TRUE, skip=1)[,6]
     d <- data.frame(p.adm, p.s1, p.s2)
-    ## remove SNPs completly monomorphic
-    to.remove <- which(d$p.adm == 0 & d$p.s1 == 0 & d$p.s2 == 0)
-    to.remove <- c(to.remove, which(d$p.adm == 1 & d$p.s1 == 1 & d$p.s2 == 1))
     ## compute numerators and denomitors of statistic
     num <- sum((d$p.adm - d$p.s1) * (d$p.adm - d$p.s2))
     denom <- sum(2 * d$p.adm * (1-d$p.adm))

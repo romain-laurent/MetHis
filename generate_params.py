@@ -465,7 +465,11 @@ def main() :
         exit_on_nb_pulse_error(1)
     if s2_pattern[1] == 'Pulse' and len(s2_pattern) > nb_generation + 3 :
         exit_on_nb_pulse_error(2)
-
+    try :
+        os.mkdir('{0}'.format(prefix))
+    except OSError :
+        print >> sys.stderr, 'Directory {0} already exists. Exiting'.format(prefix)
+        sys.exit(1)
     # starting parameters generation
     for i in xrange(1, nb_simulation+1) :
         uNe, new_Nes = generate_Nes(Ne_pattern, nb_generation)

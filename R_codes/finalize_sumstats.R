@@ -76,13 +76,15 @@ compute.ASD.stats <- function(path, idx.simu, idx.gen){
         for (j in i:3){
             pop2 <- all.pops[j]
             wanted.idxs.2 <- grep(pop2, rownames(d))
-            tmp <- d[wanted.idxs.1, wanted.idxs.2]
-            tmp <- tmp[lower.tri(tmp)]
+            tmp <- as.matrix(d[wanted.idxs.1, wanted.idxs.2])
+            
             if (i == j){
+                tmp <- tmp[lower.tri(tmp)]
                 pop <- pop1
                 final.sumstats[sprintf('mean.ASD.%s', pop)] <- mean(tmp)
                 final.sumstats[sprintf('var.ASD.%s', pop)] <- var(tmp)
             } else {
+                tmp <- as.vector(tmp)
                 final.sumstats[sprintf('mean.ASD.%s.%s', pop1, pop2)] <- mean(tmp)
                 final.sumstats[sprintf('var.ASD.%s.%s', pop1, pop2)] <- var(tmp)
             }

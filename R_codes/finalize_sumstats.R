@@ -52,7 +52,7 @@ compute.inbreeding.het <- function(path, idx.simu, idx.gen){
         final.sumstats[sprintf('mean.F.%s', pop)] <- mean(d$F)
         final.sumstats[sprintf('var.F.%s', pop)] <- var(d$F)
         ## we compute heterozigosity using allelic frequencies computed by vcftools
-        d <- read.table(sprintf('%s/simu_%s_g%s_%s.frq', path, idx.simu, idx.gen, pop), header=TRUE, skip=1)
+        d <- read.table(sprintf('%s/simu_%s_g%s_%s.frq', path, idx.simu, idx.gen, pop), skip=1)
         freqs <- d[,6]
         nb.sample <- d[1,4]
         tmp <- freqs*freqs + (1-freqs)*(1-freqs)

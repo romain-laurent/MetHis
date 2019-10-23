@@ -31,9 +31,9 @@ tryCatch(final.sumstats <- get.Fsts(path), error=function(e){invisible()}, warni
 ## F3 statistic, following Patterson 2012
 compute.F3 <- function(path, idx.simu, idx.gen){
     ## get allelic frequencies computed by vcftools
-    p.adm <- read.table(sprintf('%s/simu_%s_g%s_adm.frq', path, idx.simu, idx.gen), header=TRUE, skip=1)[,6]
-    p.s1 <- read.table(sprintf('%s/simu_%s_g%s_s1.frq', path, idx.simu, idx.gen), header=TRUE, skip=1)[,6]
-    p.s2 <- read.table(sprintf('%s/simu_%s_g%s_s2.frq', path, idx.simu, idx.gen), header=TRUE, skip=1)[,6]
+    p.adm <- read.table(sprintf('%s/simu_%s_g%s_adm.frq', path, idx.simu, idx.gen), skip=1)[,6]
+    p.s1 <- read.table(sprintf('%s/simu_%s_g%s_s1.frq', path, idx.simu, idx.gen), skip=1)[,6]
+    p.s2 <- read.table(sprintf('%s/simu_%s_g%s_s2.frq', path, idx.simu, idx.gen), skip=1)[,6]
     d <- data.frame(p.adm, p.s1, p.s2)
     ## compute numerators and denomitors of statistic
     num <- sum((d$p.adm - d$p.s1) * (d$p.adm - d$p.s2))

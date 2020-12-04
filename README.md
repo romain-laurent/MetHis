@@ -22,3 +22,5 @@ Then run the simulations:
 ```
 ./MetHis --sampling 100/100/100 --nb-snp 500 --prefix test --nb-simul 10 --nb-thread 10 --input-path example_dataset/input_example.txt
 ```
+
+The script `compute_sumstats_from_vcf.py` can be used to compute the summary statistics on the real dataset.

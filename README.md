@@ -13,10 +13,21 @@ MetHis requires:
 ## Test run
 First, compile the simulation tool using `make`.
 
-Then produce some parameter files for simulations, using for example:
+Then produce some parameter files for simulations. For example, to produce 10 generations with a constant population size of 1000 individuals in the admixed population, and one pulse per source population (in addition to foundation) :
 ```
 ./generate_params.py -S 10 -N 10 -P test --Ne 1000/Con/1000-1000 --contrib_s1 default/Pulse/1/default --contrib_s2 default/Pulse/1/default
 ```
+
+Same example as above, but the source population 1 now contributes two pulses, first a strong one and then a weak one:
+```
+./generate_params.py -S 10 -N 10 -P test --Ne 1000/Con/1000-1000 --contrib_s1 default/Pulse/2/0.8-1/0-0.2 --contrib_s2 default/Pulse/1/default
+```
+
+Same example as above, but source population 2 now has a continuously increasing contribution, from weak to strong:
+```
+./generate_params.py -S 10 -N 10 -P test --Ne 1000/Con/1000-1000 --contrib_s1 default/Pulse/2/0.8-1/0-0.2 --contrib_s2 default/Inc/0-0.3/0.8-1
+```
+
 
 Then run the simulations:
 ```

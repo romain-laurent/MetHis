@@ -468,8 +468,9 @@ def main() :
     try :
         os.mkdir('{0}'.format(prefix))
     except OSError :
-        print >> sys.stderr, 'Directory {0} already exists. Exiting'.format(prefix)
-        sys.exit(1)
+        if not force_rewrite :
+            print >> sys.stderr, 'Directory {0} already exists. Exiting'.format(prefix)
+            sys.exit(1)
     # starting parameters generation
     for i in xrange(1, nb_simulation+1) :
         uNe, new_Nes = generate_Nes(Ne_pattern, nb_generation)

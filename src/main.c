@@ -41,7 +41,6 @@ param *create_params(arg *args){
   name = allocation_char_vector(MEDIUM_BUFF_SIZE);
   p = allocation_param(args);
   /* then we create the log file and store it in the param structure */
-  printf("%s\n", args->prefix);
   sprintf(name, "./%s/global.log", args->prefix);
   p->general_log = safe_open(name, "a");
   free(name);
@@ -50,6 +49,10 @@ param *create_params(arg *args){
   p->rngs = allocation_rng_vector(args->nb_thread);
   /* we read the input genotypes once and for all */
   read_input_genotypes(p, args);
+  /* we create matrices to store admixed population genotypes once and for all*/
+  p->genos_adm_new = allocation_char_matrix(2*(args->max_Ne), args->nb_snp);
+  p->genos_adm_old = allocation_char_matrix(2*(args->max_Ne), args->nb_snp);
+  
   return p;
 }
 
@@ -109,6 +112,8 @@ void free_param(param *p, arg *args){
   free(p->rngs);
   free_char_matrix(p->genos_s1, p->nb_chrom_s1);
   free_char_matrix(p->genos_s2, p->nb_chrom_s2);
+  free_char_matrix(p->genos_adm_new, 2*(args->max_Ne));
+  free_char_matrix(p->genos_adm_old, 2*(args->max_Ne));
   free(p->adm_Ne_simul);
   free_double_matrix(p->contrib_simul, 2);
   free(p->wanted_snps);
@@ -228,6 +233,7 @@ arg *allocation_arg(void){
   a->idx_simul_deb = 1;
   a->idx_simul_fin = 1;
   a->nb_thread = 1;
+  a->max_Ne = 0;
   a->sample_size_s1 = 100;
   a->sample_size_s2 = 100;
   a->sample_size_adm = 100;
@@ -302,6 +308,8 @@ void print_usage(char *progname){
   fprintf(stderr, "\t\tNumber of individuals to sample for summary statistics computations (default=100/100/100)\n");
   fprintf(stderr, "\t--nb-snp N\n");
   fprintf(stderr, "\t\tNumber of SNP to simulate (default=50000)\n");
+  fprintf(stderr, "\t--max-Ne N\n");
+  fprintf(stderr, "\t\tThe maximum census size of the admixed population\n");
   fprintf(stderr, "\t--prefix\n");
   fprintf(stderr, "\t\tThe path where we will find all simulations directories\n");
   fprintf(stderr, "\t--nb-simul N\n");
@@ -338,6 +346,9 @@ void exit_on_error(char *arg, unsigned error_code){
     break;
   case PTHREAD_ERROR :
     fprintf(stderr, "An error occured with the pthread library. Exiting\n");
+    break;
+  case NE_ERROR :
+    fprintf(stderr, "Required Ne is higher than given argument \"max-Ne\". Exiting\n");
     break;
   }
   exit(EXIT_FAILURE);

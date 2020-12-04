@@ -1,55 +1,167 @@
 #include "misc.h"
+#include "sumstats.h"
 #include "io.h"
 #include <time.h>
 #include <string.h>
 #include <ctype.h>
+#include <gsl/gsl_math.h>
 
 /* Input/ouput fonctions */
 
-/* creates admixtools inputs using bash and vcftools */
-void create_admixtools_inputs(param *params, arg *args, unsigned idx_gen){
-  char *tmp = NULL, *command = NULL;
+/* prints sumstats computed using MetHis */
+void print_sumstats(sumstats_datast *sumstats, arg *args, param *params){
+  char buff[LARGE_BUFF_SIZE];
   FILE *f = NULL;
-  int dummy;
-  command = allocation_char_vector(LARGE_BUFF_SIZE);
-  tmp = allocation_char_vector(MEDIUM_BUFF_SIZE);
-  sprintf(tmp, "%s/simu_%u/simu_%u_g%u", args->prefix, params->current_simul, params->current_simul, idx_gen);
-  /* create PED/MAP files */
-  sprintf(command, "%s --vcf %s.vcf --plink --out %s 2> /dev/null", VCFTOOLS_PATH, tmp, tmp);
-  dummy = system(command);
-  if (dummy != 0){
-    fprintf(stderr, "It seems something went wrong during generation of ADMIXTOOLS input\n");
-    fprintf(params->simul_log, "It seems something went wrong during generation of ADMIXTOOLS input\n");
-  }
-  
-  /* create ind file */
-  sprintf(tmp, "%s/simu_%u", args->prefix, params->current_simul);
-  sprintf(command, "for type in adm s1 s2; do sed \"s/$/ M $type/\" %s/indivs_$type.txt >> %s/indivs.ind; done", tmp, tmp);
-  dummy = system(command);
-  if (dummy != 0){
-    fprintf(stderr, "It seems something went wrong during generation of ADMIXTOOLS input\n");
-    fprintf(params->simul_log, "It seems something went wrong during generation of ADMIXTOOLS input\n");
-  }
+  unsigned i;
+  /* first we create the files for each pop */
+  sprintf(buff, "./%s/simu_%u/final_sumstats.txt", args->prefix, params->current_simul);
+  f = safe_open(buff, "w");
+  fprintf(f, "Fst.s1.adm\tFst.s2.adm\tFst.s1.s2\tmean.ASD.s1.adm\tvar.ASD.s1.adm\tmean.ASD.s2.adm\tvar.ASD.s2.adm\tmean.ASD.s1.s2\tvar.ASD.s1.s2\tf3\tmean.ASD.s1\tvar.ASD.s1\tmean.ASD.s2\tvar.ASD.s2\tmean.ASD.adm\tvar.ASD.adm\tmean.het.s1\tvar.het.s1\tmean.het.s2\tvar.het.s2\tmean.het.adm\tvar.het.adm\tmean.F.s1\tvar.F.s1\tmean.F.s2\tvar.F.s2\tmean.F.adm\tvar.F.adm\tmean.adm.props\tvar.adm.props\tskew.adm.props\tkurt.adm.props\tmode.adm.props\tmean.adm.angles\tvar.adm.angles\tskew.adm.angles\tkurt.adm.angles\tmode.adm.angles");
+  for (i = 0; i < NB_PERCENTILE; i++)
+    fprintf(f, "\tperc%u.adm.props", i * 100/(NB_PERCENTILE-1));
+  for (i = 0; i < NB_PERCENTILE; i++)
+    fprintf(f, "\tperc%u.adm.angles", i * 100/(NB_PERCENTILE-1));
+  fprintf(f, "\n");
 
-  /* create list file */
-  sprintf(command, "%s/list_qp3pop.txt", tmp);
-  f = safe_open(command, "w");
-  fprintf(f, "s1 s2 adm\n");
+  print_number_or_NA(f, sumstats->fst_adm_s1);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->fst_adm_s2);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->fst_s1_s2);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->mean_asd_adm_s1);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->var_asd_adm_s1);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->mean_asd_adm_s2);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->var_asd_adm_s2);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->mean_asd_s1_s2);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->var_asd_s1_s2);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->f3);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->mean_asd_s1);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->var_asd_s1);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->mean_asd_s2);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->var_asd_s2);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->mean_asd_adm);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->var_asd_adm);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->mean_het_s1);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->var_het_s1);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->mean_het_s2);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->var_het_s2);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->mean_het_adm);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->var_het_adm);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->mean_F_s1);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->var_F_s1);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->mean_F_s2);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->var_F_s2);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->mean_F_adm);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->var_F_adm);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->adm_prop_mean);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->adm_prop_sd * sumstats->adm_prop_sd);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->adm_prop_skew);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->adm_prop_kurt);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->adm_prop_mode);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->adm_ang_mean);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->adm_ang_sd * sumstats->adm_ang_sd);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->adm_ang_skew);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->adm_ang_kurt);
+  fprintf(f, "\t");
+  print_number_or_NA(f, sumstats->adm_ang_mode);
+  for (i = 0; i < NB_PERCENTILE; i++){
+    fprintf(f, "\t");
+    print_number_or_NA(f, sumstats->percentiles[i]);
+  }
+  for (i = 0; i < NB_PERCENTILE; i++){
+    fprintf(f, "\t");
+    print_number_or_NA(f, sumstats->ang_percentiles[i]);
+  }
+  fprintf(f, "\n");
   fclose(f);
-
-  /* create param file */
-  sprintf(command, "%s/qp3pop.param", tmp);
-  f = safe_open(command, "w");
-  fprintf(f, "indivname: %s/indivs.ind\n", tmp);
-  fprintf(f, "popfilename: %s/list_qp3pop.txt\n", tmp);
-  sprintf(tmp, "%s/simu_%u/simu_%u_g%u", args->prefix, params->current_simul, params->current_simul, idx_gen);
-  fprintf(f, "snpname: %s.map\n", tmp);
-  fprintf(f, "genotypename: %s.ped\n", tmp);
-  fclose(f);
-  
-  free(command);
-  free(tmp);
 }
+
+void print_number_or_NA(FILE *f, double N){
+  if (gsl_isnan(N))
+    fprintf(f, "NA");
+  else
+    fprintf(f, "%.6e", N);
+
+}
+
+/* /\* creates admixtools inputs using bash and vcftools *\/ */
+/* void create_admixtools_inputs(param *params, arg *args, unsigned idx_gen){ */
+/*   char *tmp = NULL, *command = NULL; */
+/*   FILE *f = NULL; */
+/*   int dummy; */
+/*   command = allocation_char_vector(LARGE_BUFF_SIZE); */
+/*   tmp = allocation_char_vector(MEDIUM_BUFF_SIZE); */
+/*   sprintf(tmp, "%s/simu_%u/simu_%u_g%u", args->prefix, params->current_simul, params->current_simul, idx_gen); */
+/*   /\* create PED/MAP files *\/ */
+/*   sprintf(command, "%s --vcf %s.vcf --plink --out %s 2> /dev/null", VCFTOOLS_PATH, tmp, tmp); */
+/*   dummy = system(command); */
+/*   if (dummy != 0){ */
+/*     fprintf(stderr, "It seems something went wrong during generation of ADMIXTOOLS input\n"); */
+/*     fprintf(params->simul_log, "It seems something went wrong during generation of ADMIXTOOLS input\n"); */
+/*   } */
+  
+/*   /\* create ind file *\/ */
+/*   sprintf(tmp, "%s/simu_%u", args->prefix, params->current_simul); */
+/*   sprintf(command, "for type in adm s1 s2; do sed \"s/$/ M $type/\" %s/indivs_$type.txt >> %s/indivs.ind; done", tmp, tmp); */
+/*   dummy = system(command); */
+/*   if (dummy != 0){ */
+/*     fprintf(stderr, "It seems something went wrong during generation of ADMIXTOOLS input\n"); */
+/*     fprintf(params->simul_log, "It seems something went wrong during generation of ADMIXTOOLS input\n"); */
+/*   } */
+
+/*   /\* create list file *\/ */
+/*   sprintf(command, "%s/list_qp3pop.txt", tmp); */
+/*   f = safe_open(command, "w"); */
+/*   fprintf(f, "s1 s2 adm\n"); */
+/*   fclose(f); */
+
+/*   /\* create param file *\/ */
+/*   sprintf(command, "%s/qp3pop.param", tmp); */
+/*   f = safe_open(command, "w"); */
+/*   fprintf(f, "indivname: %s/indivs.ind\n", tmp); */
+/*   fprintf(f, "popfilename: %s/list_qp3pop.txt\n", tmp); */
+/*   sprintf(tmp, "%s/simu_%u/simu_%u_g%u", args->prefix, params->current_simul, params->current_simul, idx_gen); */
+/*   fprintf(f, "snpname: %s.map\n", tmp); */
+/*   fprintf(f, "genotypename: %s.ped\n", tmp); */
+/*   fclose(f); */
+  
+/*   free(command); */
+/*   free(tmp); */
+/* } */
 
 
 /* writes a vcf file and all we need to use vcftools */
@@ -114,49 +226,49 @@ void write_vcf_file(param *params, arg *args, unsigned **wanted_samples, unsigne
 }
 
 
-/* write a tped (and a tfam) file */
-void write_tped_file(param *params, arg *args, unsigned **wanted_samples, unsigned idx_gen){
-  FILE *f = NULL;
-  char buff[MEDIUM_BUFF_SIZE];
-  unsigned i, j, nb_done;
-  /* first we create the tfam file */
-  sprintf(buff, "./%s/simu_%u/simu_%u_g%u.tfam", args->prefix, params->current_simul, params->current_simul, idx_gen);
-  f = safe_open(buff, "w");
-  for (i = 0; i < args->sample_size_adm; i++)
-    fprintf(f, "adm_%u\tadm_%u\t0\t0\t-9\n", i, i);
-  for (i = 0; i < args->sample_size_s1; i++)
-    fprintf(f, "s1_%u\ts1_%u\t0\t0\t-9\n", i, i);
-  for (i = 0; i < args->sample_size_s2; i++)
-    fprintf(f, "s2_%u\ts2_%u\t0\t0\t-9\n", i, i);
-  fclose(f);
-  /* then the tped */
-  sprintf(buff, "./%s/simu_%u/simu_%u_g%u.tped", args->prefix, params->current_simul, params->current_simul, idx_gen);
-  f = safe_open(buff, "w");
-  for (i = 0; i < args->nb_snp; i++){
-    fprintf(f, "%u\tsnp%u\t0\t1", i+1, i+1);
-    nb_done = 0;
-    for (j = 0; j < args->sample_size_adm; j++){
-      if (wanted_samples[nb_done][0] != FLAG_ADM)
-	printf("probleme...\n");
-      fprintf(f, "\t%c\t%c", params->genos_adm_new[wanted_samples[nb_done][1]][i]+1, params->genos_adm_new[wanted_samples[nb_done][2]][i]+1);
-      nb_done++;
-    }
-    for (j = 0; j < args->sample_size_s1; j++){
-      if (wanted_samples[nb_done][0] != FLAG_S1)
-	printf("probleme...\n");
-      fprintf(f, "\t%c\t%c", params->genos_s1[wanted_samples[nb_done][1]][params->wanted_snps[i]]+1, params->genos_s1[wanted_samples[nb_done][2]][params->wanted_snps[i]]+1);
-      nb_done++;
-    }
-    for (j = 0; j < args->sample_size_s2; j++){
-      if (wanted_samples[nb_done][0] != FLAG_S2)
-	printf("probleme...\n");
-      fprintf(f, "\t%c\t%c", params->genos_s2[wanted_samples[nb_done][1]][params->wanted_snps[i]]+1, params->genos_s2[wanted_samples[nb_done][2]][params->wanted_snps[i]]+1);
-      nb_done++;
-    }
-    fprintf(f, "\n");
-  }
-  fclose(f);
-}
+/* /\* write a tped (and a tfam) file *\/ */
+/* void write_tped_file(param *params, arg *args, unsigned **wanted_samples, unsigned idx_gen){ */
+/*   FILE *f = NULL; */
+/*   char buff[MEDIUM_BUFF_SIZE]; */
+/*   unsigned i, j, nb_done; */
+/*   /\* first we create the tfam file *\/ */
+/*   sprintf(buff, "./%s/simu_%u/simu_%u_g%u.tfam", args->prefix, params->current_simul, params->current_simul, idx_gen); */
+/*   f = safe_open(buff, "w"); */
+/*   for (i = 0; i < args->sample_size_adm; i++) */
+/*     fprintf(f, "adm_%u\tadm_%u\t0\t0\t-9\n", i, i); */
+/*   for (i = 0; i < args->sample_size_s1; i++) */
+/*     fprintf(f, "s1_%u\ts1_%u\t0\t0\t-9\n", i, i); */
+/*   for (i = 0; i < args->sample_size_s2; i++) */
+/*     fprintf(f, "s2_%u\ts2_%u\t0\t0\t-9\n", i, i); */
+/*   fclose(f); */
+/*   /\* then the tped *\/ */
+/*   sprintf(buff, "./%s/simu_%u/simu_%u_g%u.tped", args->prefix, params->current_simul, params->current_simul, idx_gen); */
+/*   f = safe_open(buff, "w"); */
+/*   for (i = 0; i < args->nb_snp; i++){ */
+/*     fprintf(f, "%u\tsnp%u\t0\t1", i+1, i+1); */
+/*     nb_done = 0; */
+/*     for (j = 0; j < args->sample_size_adm; j++){ */
+/*       if (wanted_samples[nb_done][0] != FLAG_ADM) */
+/* 	printf("probleme...\n"); */
+/*       fprintf(f, "\t%c\t%c", params->genos_adm_new[wanted_samples[nb_done][1]][i]+1, params->genos_adm_new[wanted_samples[nb_done][2]][i]+1); */
+/*       nb_done++; */
+/*     } */
+/*     for (j = 0; j < args->sample_size_s1; j++){ */
+/*       if (wanted_samples[nb_done][0] != FLAG_S1) */
+/* 	printf("probleme...\n"); */
+/*       fprintf(f, "\t%c\t%c", params->genos_s1[wanted_samples[nb_done][1]][params->wanted_snps[i]]+1, params->genos_s1[wanted_samples[nb_done][2]][params->wanted_snps[i]]+1); */
+/*       nb_done++; */
+/*     } */
+/*     for (j = 0; j < args->sample_size_s2; j++){ */
+/*       if (wanted_samples[nb_done][0] != FLAG_S2) */
+/* 	printf("probleme...\n"); */
+/*       fprintf(f, "\t%c\t%c", params->genos_s2[wanted_samples[nb_done][1]][params->wanted_snps[i]]+1, params->genos_s2[wanted_samples[nb_done][2]][params->wanted_snps[i]]+1); */
+/*       nb_done++; */
+/*     } */
+/*     fprintf(f, "\n"); */
+/*   } */
+/*   fclose(f); */
+/* } */
 
 
 
@@ -279,6 +391,8 @@ void write_arguments(arg *args, FILE *log){
   fprintf(log, "\tsave-data: %s\n", t_or_f(args->save_data));
   fprintf(stderr, "\tnb-snp: %u\n", args->nb_snp);
   fprintf(log, "\tnb-snp: %u\n", args->nb_snp);
+  fprintf(stderr, "\tmax-Ne: %u\n", args->max_Ne);
+  fprintf(log, "\tmax-Ne: %u\n", args->max_Ne);
   fprintf(stderr, "\tnb-simul: %u-%u\n", args->idx_simul_deb, args->idx_simul_fin);
   fprintf(log, "\tnb-simul: %u-%u\n", args->idx_simul_deb, args->idx_simul_fin);
   fprintf(stderr, "\tnb-thread: %u\n", args->nb_thread);

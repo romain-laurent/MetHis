@@ -16,6 +16,7 @@
 #define NB_SNP_ERROR 6
 #define BIG_ROUNDING_ERROR 7
 #define PTHREAD_ERROR 8
+#define NE_ERROR 9
 
 
 #define FLAG_ADM 0
@@ -40,6 +41,7 @@
 
 #define PROG_NAME "MetHis"
 
+
 /* structure containing general parameters + parameters for one simulation */
 typedef struct param{
   FILE *general_log;
@@ -62,6 +64,132 @@ typedef struct param{
   char **genos_adm_old;
   char **genos_adm_new;
 }param;
+
+
+/* structure containing arguments from the command line */
+typedef struct arg{
+  int help;
+  int save_data;
+  unsigned nb_snp;
+  unsigned max_Ne;
+  unsigned nb_generation;
+  unsigned idx_simul_deb;
+  unsigned idx_simul_fin;
+  unsigned nb_thread;
+  unsigned sample_size_s1;
+  unsigned sample_size_s2;
+  unsigned sample_size_adm;
+  char *input_path;
+  char *prefix;
+}arg;
+
+
+/* structure used to store thread information for genotype conversion */
+typedef struct thread_datast_fill_genotypes{
+  unsigned idx_min;
+  unsigned idx_max;
+  param *params;
+  arg *args;
+  unsigned **wanted_samples;
+  char **genotypes;
+} thread_datast_fill_genotypes;
+
+/* structure used to store thread information when computing allele sharing distances */
+typedef struct thread_datast_asd{
+  unsigned idx_min;
+  unsigned idx_max;
+  unsigned nb_indiv;
+  char **genotypes;
+  double **tmp_asd;
+} thread_datast_asd;
+
+/* structure used to store allele frequencies */
+typedef struct freqs_datast{
+  double *freqs_adm;
+  double *freqs_s1;
+  double *freqs_s2;
+  double *hets_adm;
+  double *hets_s1;
+  double *hets_s2;
+} freqs_datast;
+
+/* structure used to store thread information for computation of statistics based on allele frequencies */
+typedef struct thread_datast_freqs{
+  char **genotypes;
+  freqs_datast *freqs;
+  arg *args;
+  unsigned idx_deb;
+  unsigned idx_fin;
+  double accu_num_f3;
+  double accu_denom_f3;
+  unsigned *nb_het_sites_adm;
+  unsigned *nb_het_sites_s1;
+  unsigned *nb_het_sites_s2;
+  unsigned nb_sites_considered_F_adm;
+  unsigned nb_sites_considered_F_s1;
+  unsigned nb_sites_considered_F_s2;
+  double expected_hom_adm;
+  double expected_hom_s1;
+  double expected_hom_s2;
+  double n_bar_adm_s1;
+  double n_bar_adm_s2;
+  double n_bar_s1_s2;
+  double n_C_adm_s1;
+  double n_C_adm_s2;
+  double n_C_s1_s2;
+  double accu_num_fst_adm_s1;
+  double accu_denom_fst_adm_s1;
+  double accu_num_fst_adm_s2;
+  double accu_denom_fst_adm_s2;
+  double accu_num_fst_s1_s2;
+  double accu_denom_fst_s1_s2;
+}thread_datast_freqs;
+
+/* structure used to store summary statistics */
+typedef struct sumstats_datast{
+  double adm_prop_mean;
+  double adm_prop_sd;
+  double adm_prop_skew;
+  double adm_prop_kurt;
+  double adm_prop_mode;
+  double *percentiles;
+  double adm_ang_mean;
+  double adm_ang_sd;
+  double adm_ang_skew;
+  double adm_ang_kurt;
+  double adm_ang_mode;
+  double *ang_percentiles;
+  
+  double mean_asd_adm;
+  double var_asd_adm;
+  double mean_asd_s1;
+  double var_asd_s1;
+  double mean_asd_s2;
+  double var_asd_s2;
+  double mean_asd_adm_s1;
+  double var_asd_adm_s1;
+  double mean_asd_adm_s2;
+  double var_asd_adm_s2;
+  double mean_asd_s1_s2;
+  double var_asd_s1_s2;
+  double f3;
+  double mean_het_adm;
+  double var_het_adm;
+  double mean_het_s1;
+  double var_het_s1;
+  double mean_het_s2;
+  double var_het_s2;
+  double mean_F_adm;
+  double var_F_adm;
+  double mean_F_s1;
+  double var_F_s1;
+  double mean_F_s2;
+  double var_F_s2;
+  double fst_adm_s1;
+  double fst_adm_s2;
+  double fst_s1_s2;
+}sumstats_datast;
+
 
 
 /* structure containing informations about one given couple */
@@ -93,23 +221,6 @@ typedef struct couple_param{
   unsigned *order_pop1;
   unsigned *order_pop2;
 }couple_param;
-
-/* structure containing arguments from the command line */
-typedef struct arg{
-  int help;
-  int save_data;
-  unsigned nb_snp;
-  unsigned nb_generation;
-  unsigned idx_simul_deb;
-  unsigned idx_simul_fin;
-  unsigned nb_thread;
-  unsigned sample_size_s1;
-  unsigned sample_size_s2;
-  unsigned sample_size_adm;
-  char *input_path;
-  char *prefix;
-}arg;
-
 
 /* general functions definitions */
 void exit_on_error(char *arg, unsigned error_code);

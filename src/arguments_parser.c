@@ -30,12 +30,13 @@ arg *parse_arguments(int argc, char **argv){
     {"sampling", required_argument, 0, 'e'},
     {"input-path", required_argument, 0, 'f'},
     {"prefix", required_argument, 0, 'g'},
+    {"max-Ne", required_argument, 0, 'h'},
     {0, 0, 0, 0}
   };
   
   while (1 && args->help != 1){
     option_index = 0;
-    c = getopt_long(argc, argv, "a:c:d:e:f:g:l:", long_options, &option_index);
+    c = getopt_long(argc, argv, "a:c:d:e:f:g:h:l:", long_options, &option_index);
     
     /* if end of options */
     if (c == -1)
@@ -81,6 +82,10 @@ arg *parse_arguments(int argc, char **argv){
     case 'g' :
       dummy = sscanf(optarg, "%s", args->prefix);
       break;
+    case 'h' :
+      args->max_Ne = get_unsigned_number(optarg, "max-Ne");
+      break;
+
     }
   }
 

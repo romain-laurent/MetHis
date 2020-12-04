@@ -54,8 +54,13 @@ void read_param_file(param *params, arg *args, unsigned idx_simul){
   for (i = 0; i < (args->nb_generation) + 1; i++){
     buff = fgets(buff, LARGE_BUFF_SIZE, f);
     dummy = sscanf(buff, "%u\t%u\t%lf\t%lf", &dummy2, &(params->adm_Ne_simul[i]), &(params->contrib_simul[0][i]), &(params->contrib_simul[1][i]));
+    
     if (dummy != 4)
       exit_on_error(NULL, PARSING_ERROR);
+
+    if (params->adm_Ne_simul[i] > args->max_Ne)
+      exit_on_error(NULL, NE_ERROR);
+    
   }
   free(filename);
   free(buff);

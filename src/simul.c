@@ -1,5 +1,6 @@
 #include "misc.h"
 #include "simul.h"
+#include "sumstats.h"
 #include "io.h"
 #include <string.h>
 #include <math.h>
@@ -12,6 +13,8 @@ void make_one_simul(param *params, arg *args){
   couple_param *couple_params = NULL;
   couple **couples = NULL;
   unsigned **wanted_samples = NULL;
+  char **dummy = NULL;
+  couples = allocation_couple_vector(args->max_Ne);
   /* we initialise the order_chroms vectors */
   params->order_chroms_s1 = initialize_chrom_order(params->nb_chrom_s1);
   params->order_chroms_s2 = initialize_chrom_order(params->nb_chrom_s2);
@@ -28,14 +31,13 @@ void make_one_simul(param *params, arg *args){
     gsl_ran_shuffle(params->rngs[0], params->order_chroms_s1, params->nb_chrom_s1, sizeof(unsigned));
     gsl_ran_shuffle(params->rngs[0], params->order_chroms_s2, params->nb_chrom_s2, sizeof(unsigned));
     /* now we proceed with reproduction */
-    params->genos_adm_new = allocation_char_matrix(2*params->current_adm_Ne, args->nb_snp);
+    /*    params->genos_adm_new = allocation_char_matrix(2*params->current_adm_Ne, args->nb_snp);*/
     if (idx_gen != 0){
       params->order_chroms_adm = initialize_chrom_order(2*params->prev_adm_Ne);
     }
     /* REPRODUCTION */
     /* first we create couples */
     nb_done = 0;
-    couples = allocation_couple_vector(params->current_adm_Ne);
     for (i = 0; i < 6; i++){
       if (nb_couples[i] == 0)
 	continue;
@@ -51,241 +53,33 @@ void make_one_simul(param *params, arg *args){
     /* and now we make individuals reproduce */
     make_multithreaded_reproduction(params, couples, args->nb_thread, args->nb_snp);
     /* we sample individuals if we need them */
-    if (idx_gen == args->nb_generation){
+    if (idx_gen == args->nb_generation){      
       /* sample individuals */
       wanted_samples = sample_individuals(params, args, couples);
+      compute_all_sumstats(params, args, wanted_samples);
+      
+      if (args->save_data)
+	write_vcf_file(params, args, wanted_samples, idx_gen);
 
-      /* now we compute summary statistics */
-      /* write genotypes to tped file */
-      write_tped_file(params, args, wanted_samples, idx_gen);
-      /* we compute ASD matrix using external software */
-            compute_asd_matrix(args, params, idx_gen);
-      /* write genotypes to vcf file */
-      write_vcf_file(params, args, wanted_samples, idx_gen);
-      compute_allelic_frequencies(params, args, idx_gen);
-
-      compute_fst(params, args, idx_gen);
-      compute_inbreeding(params, args, idx_gen);
-      finalize_stats_computation(params, args, idx_gen);
-      /* we remove temporary files */
-      remove_temporary_files(args, params, idx_gen);
-      /* at the last generation, we compute summary statistics anyway */
       free_unsigned_matrix(wanted_samples, args->sample_size_s1 + args->sample_size_s2 + args->sample_size_adm);
     }
     /* a little bit of cleanup */
     if (idx_gen != 0){
-      free_char_matrix(params->genos_adm_old, 2*params->prev_adm_Ne);
+      /*      free_char_matrix(params->genos_adm_old, 2*params->prev_adm_Ne);*/
+      /*params->genos_adm_old = NULL;*/
       free(params->order_chroms_adm);
     }
+    /* we invert genotypes matrices pointers */
+    dummy = params->genos_adm_old;
     params->genos_adm_old = params->genos_adm_new;
-    free_couple_vector(couples, params->current_adm_Ne);
+    params->genos_adm_new = dummy;
+
   }
-  free_char_matrix(params->genos_adm_old, 2*params->current_adm_Ne);
+  /*  free_char_matrix(params->genos_adm_old, 2*params->current_adm_Ne);*/
+  /*params->genos_adm_old = NULL;*/
+  free_couple_vector(couples, args->max_Ne);
   free_couple_param(couple_params);
   return;
-}
-
-void finalize_stats_computation(param *params, arg *args, unsigned idx_gen){
-  char *command = NULL;
-  int dummy;
-  fprintf(stderr, "Finalizing summary statistics computations...\n");
-  fprintf(params->simul_log, "Finalizing summary statistics computations...\n");
-  command = allocation_char_vector(LARGE_BUFF_SIZE);
-  sprintf(command, "%s R_codes/finalize_sumstats.R %s %u %u", RSCRIPT_PATH, args->prefix, params->current_simul, idx_gen);
-  dummy = system(command);
-  if (dummy != 0){
-    fprintf(stderr, "It seems something went wrong during final sumstats computation\n");
-    fprintf(params->simul_log, "It seems something went wrong during final sumstats computation\n");
-  }
-  free(command);
-}
-
-void compute_inbreeding(param *params, arg *args, unsigned idx_gen){
-  char *command = NULL, *tmp = NULL, *tmp2 = NULL;
-  int dummy;
-  fprintf(stderr, "Computing inbreeding coefficients...\n");
-  fprintf(params->simul_log, "Computing inbreeding coefficients...\n");
-  command = allocation_char_vector(LARGE_BUFF_SIZE);
-  tmp = allocation_char_vector(MEDIUM_BUFF_SIZE);
-  tmp2 = allocation_char_vector(MEDIUM_BUFF_SIZE);
-  sprintf(tmp, "%s/simu_%u/simu_%u_g%u", args->prefix, params->current_simul, params->current_simul, idx_gen);
-  sprintf(tmp2, "%s/simu_%u", args->prefix, params->current_simul);
-  sprintf(command, "%s --vcf %s.vcf --keep %s/indivs_adm.txt --het --out %s/adm 2> /dev/null", VCFTOOLS_PATH, tmp, tmp2, tmp2);
-  dummy = system(command);
-  if (dummy != 0){
-    fprintf(stderr, "It seems something went wrong during inbreeding coefficients computation\n");
-    fprintf(params->simul_log, "It seems something went wrong during inbreeding coefficients computation\n");
-  }
-  sprintf(command, "%s --vcf %s.vcf --keep %s/indivs_s1.txt --het --out %s/s1 2> /dev/null", VCFTOOLS_PATH, tmp, tmp2, tmp2);
-  dummy = system(command);
-  if (dummy != 0){
-    fprintf(stderr, "It seems something went wrong during inbreeding coefficients computation\n");
-    fprintf(params->simul_log, "It seems something went wrong during inbreeding coefficients computation\n");
-  } 
-  sprintf(command, "%s --vcf %s.vcf --keep %s/indivs_s2.txt --het --out %s/s2 2> /dev/null", VCFTOOLS_PATH, tmp, tmp2, tmp2);
-  dummy = system(command);
-  if (dummy != 0){
-    fprintf(stderr, "It seems something went wrong during inbreeding coefficients computation\n");
-    fprintf(params->simul_log, "It seems something went wrong during inbreeding coefficients computation\n");
-  }
-  
-  free(command);
-  free(tmp);
-  free(tmp2);
-}
-
-
-void compute_fst(param *params, arg *args, unsigned idx_gen){
-  char *command = NULL, *tmp = NULL, *tmp2 = NULL;
-  int dummy;
-  fprintf(stderr, "Computing Fst...\n");
-  fprintf(params->simul_log, "Computing Fst...\n");
-  command = allocation_char_vector(LARGE_BUFF_SIZE);
-  tmp = allocation_char_vector(MEDIUM_BUFF_SIZE);
-  tmp2 = allocation_char_vector(MEDIUM_BUFF_SIZE);
-  sprintf(tmp, "%s/simu_%u/simu_%u_g%u", args->prefix, params->current_simul, params->current_simul, idx_gen);
-  sprintf(tmp2, "%s/simu_%u", args->prefix, params->current_simul);
-  sprintf(command, "%s --vcf %s.vcf --weir-fst-pop %s/indivs_adm.txt --weir-fst-pop %s/indivs_s1.txt --out %s 2>&1 | grep weighted | awk '{print $7}' > %s/result.fst", VCFTOOLS_PATH, tmp, tmp2, tmp2, tmp, tmp2);
-  dummy = system(command);
-  if (dummy != 0){
-    fprintf(stderr, "It seems something went wrong during Fst computation\n");
-    fprintf(params->simul_log, "It seems something went wrong during Fst computation\n");
-  }
-  sprintf(command, "%s --vcf %s.vcf --weir-fst-pop %s/indivs_adm.txt --weir-fst-pop %s/indivs_s2.txt --out %s 2>&1 | grep weighted | awk '{print $7}' >> %s/result.fst", VCFTOOLS_PATH, tmp, tmp2, tmp2, tmp, tmp2);
-  dummy = system(command);
-  if (dummy != 0){
-    fprintf(stderr, "It seems something went wrong during Fst computation\n");
-    fprintf(params->simul_log, "It seems something went wrong during Fst computation\n");
-  }
-  sprintf(command, "%s --vcf %s.vcf --weir-fst-pop %s/indivs_s1.txt --weir-fst-pop %s/indivs_s2.txt --out %s 2>&1 | grep weighted | awk '{print $7}' >> %s/result.fst", VCFTOOLS_PATH, tmp, tmp2, tmp2, tmp, tmp2);
-  dummy = system(command);
-  if (dummy != 0){
-    fprintf(stderr, "It seems something went wrong during Fst computation\n");
-    fprintf(params->simul_log, "It seems something went wrong during Fst computation\n");
-  }
-  free(command);
-  free(tmp);
-  free(tmp2);
-}
-
-void compute_allelic_frequencies(param *params, arg *args, unsigned idx_gen){
-  char *command = NULL, *tmp = NULL, *tmp2 = NULL;
-  int dummy;
-  fprintf(stderr, "Computing allelic frequencies...\n");
-  fprintf(params->simul_log, "Computing allelic frequencies...\n");
-  command = allocation_char_vector(LARGE_BUFF_SIZE);
-  tmp = allocation_char_vector(MEDIUM_BUFF_SIZE);
-  tmp2 = allocation_char_vector(MEDIUM_BUFF_SIZE);
-  sprintf(tmp, "%s/simu_%u/simu_%u_g%u", args->prefix, params->current_simul, params->current_simul, idx_gen);
-  sprintf(tmp2, "%s/simu_%u", args->prefix, params->current_simul);
-  sprintf(command, "%s --vcf %s.vcf --keep %s/indivs_adm.txt --freq2 --out %s_adm 2> /dev/null", VCFTOOLS_PATH, tmp, tmp2, tmp);
-  dummy = system(command);
-  if (dummy != 0){
-    fprintf(stderr, "It seems something went wrong during allelic frequencies computation\n");
-    fprintf(params->simul_log, "It seems something went wrong during allelic frequencies computation\n");
-  }
-  sprintf(command, "%s --vcf %s.vcf --keep %s/indivs_s1.txt --freq2 --out %s_s1 2> /dev/null", VCFTOOLS_PATH, tmp, tmp2, tmp);
-  dummy = system(command);
-  if (dummy != 0){
-    fprintf(stderr, "It seems something went wrong during allelic frequencies computation\n");
-    fprintf(params->simul_log, "It seems something went wrong during allelic frequencies computation\n");
-  }
-  sprintf(command, "%s --vcf %s.vcf --keep %s/indivs_s2.txt --freq2 --out %s_s2 2> /dev/null", VCFTOOLS_PATH, tmp, tmp2, tmp);
-  dummy = system(command);
-  if (dummy != 0){
-    fprintf(stderr, "It seems something went wrong during allelic frequencies computation\n");
-    fprintf(params->simul_log, "It seems something went wrong during allelic frequencies computation\n");
-  }
-  free(command);
-  free(tmp);
-  free(tmp2);
-}
-
-/* removes files used to compute statistics / draw MDS */
-void remove_temporary_files(arg *args, param *params, unsigned idx_gen){
-  char *tmp = NULL, *tmp2 = NULL;
-  int dummy;
-  fprintf(stderr, "Removing temporary files...\n");
-  fprintf(params->simul_log, "Removing temporary files...\n");
-  tmp = allocation_char_vector(MEDIUM_BUFF_SIZE);
-  tmp2 = allocation_char_vector(MEDIUM_BUFF_SIZE);
-  sprintf(tmp, "%s/simu_%u/simu_%u_g%u", args->prefix, params->current_simul, params->current_simul, idx_gen);
-  sprintf(tmp2, "%s.asd.dist", tmp);
-  remove_one_file(tmp2);
-  sprintf(tmp2, "%s.error", tmp);
-  remove_one_file(tmp2);
-  sprintf(tmp2, "%s.log", tmp);
-  remove_one_file(tmp2);
-  sprintf(tmp2, "%s_adm.frq", tmp);
-  remove_one_file(tmp2);
-  sprintf(tmp2, "%s_s1.frq", tmp);
-  remove_one_file(tmp2);
-  sprintf(tmp2, "%s_s2.frq", tmp);
-  remove_one_file(tmp2);
-  sprintf(tmp2, "%s.weir.fst", tmp);
-  remove_one_file(tmp2);
-  sprintf(tmp2, "%s.vcf", tmp);
-  if (args->save_data){
-    sprintf(tmp, "bgzip -f %s", tmp2);
-    dummy = system(tmp);
-    if (dummy != 0){
-      fprintf(stderr, "It seems something went wrong during data compression\n");
-      fprintf(params->simul_log, "It seems something went wrong during data compression\n");
-    }
-  }
-  else {
-    remove_one_file(tmp2);
-  }
-  sprintf(tmp, "%s/simu_%u", args->prefix, params->current_simul);
-  sprintf(tmp2, "%s/indivs_adm.txt", tmp);
-  remove_one_file(tmp2);
-  sprintf(tmp2, "%s/indivs_s1.txt", tmp);
-  remove_one_file(tmp2);
-  sprintf(tmp2, "%s/indivs_s2.txt", tmp);
-  remove_one_file(tmp2);
-  sprintf(tmp2, "%s/adm.het", tmp);
-  remove_one_file(tmp2);
-  sprintf(tmp2, "%s/s1.het", tmp);
-  remove_one_file(tmp2);
-  sprintf(tmp2, "%s/s2.het", tmp);
-  remove_one_file(tmp2);
-  sprintf(tmp2, "%s/result.fst", tmp);
-  remove_one_file(tmp2);
-  
-  /* if we do not want to save the data */
-  sprintf(tmp, "%s/simu_%u/simu_%u_g%u", args->prefix, params->current_simul, params->current_simul, idx_gen);
-  sprintf(tmp2, "%s.tped", tmp);
-  remove_one_file(tmp2);
-  sprintf(tmp2, "%s.tfam", tmp);
-  remove_one_file(tmp2);
-  free(tmp);
-  free(tmp2);
-}
-
-void remove_one_file(char *name){
-  int dummy;
-  dummy = remove(name);
-  if (dummy != 0){
-    fprintf(stderr, "An error occured while removing \"%s\"\n", name);
-  }
-}
-
-void compute_asd_matrix(arg *args, param *params, unsigned idx_gen){
-  char *command = NULL, *tmp = NULL;
-  int dummy;
-  fprintf(stderr, "Computing ASD matrix...\n");
-  fprintf(params->simul_log, "Computing ASD matrix...\n");
-  command = allocation_char_vector(LARGE_BUFF_SIZE);
-  tmp = allocation_char_vector(MEDIUM_BUFF_SIZE);
-  sprintf(tmp, "%s/simu_%u/simu_%u_g%u", args->prefix, params->current_simul, params->current_simul, idx_gen);
-  sprintf(command, "%s --tfam %s.tfam --tped %s.tped --biallelic --out %s --threads %u > /dev/null 2> /dev/null", ASD_PATH, tmp, tmp, tmp, args->nb_thread);
-  dummy = system(command);
-  if (dummy != 0){
-    fprintf(stderr, "It seems something went wrong during ASD computation\n");
-    fprintf(params->simul_log, "It seems something went wrong during ASD computation\n");
-  }
-  free(command);
-  free(tmp);
 }
 
 unsigned **sample_individuals(param *params, arg *args, couple **couples){
@@ -404,6 +198,8 @@ void make_multithreaded_reproduction(param *params, couple **couples, unsigned n
   thread_datast *thread_datas = NULL;
   unsigned i, increment, idx_deb, idx_fin;
   int dummy;
+  if (params->current_adm_Ne < nb_thread)
+    nb_thread = params->current_adm_Ne;
   threads = allocation_pthread_t_vector(nb_thread);
   thread_datas = allocation_thread_datast_vector(nb_thread);
   increment = params->current_adm_Ne / nb_thread;

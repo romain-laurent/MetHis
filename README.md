@@ -1,6 +1,7 @@
 # MetHis
 
 MetHis is a population genetics forward simulation tool designed to simulate arbitrarily complex admixture histories between two populations.
+The original MetHis publication is available in open access: https://doi.org/10.1111/1755-0998.13325
 
 ## Requirements
 MetHis requires:

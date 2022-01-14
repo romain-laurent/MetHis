@@ -136,14 +136,19 @@ def parse_pulse_contrib(contrib_str, contrib_id) :
    
 # parses a contribution string from the command line
 def parse_contrib_str(contrib_str, contrib_id) :
+
     # we make a special case for the 'Pulse' scheme
     if 'Pulse' in contrib_str :
         contrib = parse_pulse_contrib(contrib_str, contrib_id)
         return contrib
     # for other schemes
     contrib_splitted = contrib_str.split('/')
-    if len(contrib_splitted) != 4 :
-        exit_on_contrib_parsing_fail(contrib_str, contrib_id)
+    if 'Con' in contrib_str :
+        if len(contrib_splitted) != 3 :
+            exit_on_contrib_parsing_fail(contrib_str, contrib_id)
+    else :
+        if len(contrib_splitted) != 4 :
+            exit_on_contrib_parsing_fail(contrib_str, contrib_id)
     if contrib_splitted[0] == 'default' :
         contrib_0 = 'default'
     else :
@@ -151,6 +156,7 @@ def parse_contrib_str(contrib_str, contrib_id) :
             contrib_0 = float(contrib_splitted[0])
         except :
             exit_on_contrib_parsing_fail(contrib_str, contrib_id)
+
     if contrib_splitted[1] not in ('Con','Inc','Dec','All', 'Pulse') :
         exit_on_contrib_parsing_fail(contrib_str, contrib_id)
     if contrib_splitted[2] == 'default' :
@@ -164,17 +170,20 @@ def parse_contrib_str(contrib_str, contrib_id) :
             contrib_range_init = tuple(sorted(contrib_range_init))
         except :
             exit_on_contrib_parsing_fail(contrib_str, contrib_id)
-    if contrib_splitted[3] == 'default' :
-        contrib_range_final = (0.0, 1.0)
+    if contrib_splitted[1] != 'Con' :
+        if contrib_splitted[3] == 'default' :
+            contrib_range_final = (0.0, 1.0)
+        else :
+            try :
+                tmp = contrib_splitted[3].split('-')
+                if len(tmp) != 2 :
+                    raise ValueError
+                contrib_range_final = float(tmp[0]), float(tmp[1])
+                contrib_range_final = tuple(sorted(contrib_range_final))
+            except :
+                exit_on_contrib_parsing_fail(contrib_str, contrib_id)
     else :
-        try :
-            tmp = contrib_splitted[3].split('-')
-            if len(tmp) != 2 :
-                raise ValueError
-            contrib_range_final = float(tmp[0]), float(tmp[1])
-            contrib_range_final = tuple(sorted(contrib_range_final))
-        except :
-            exit_on_contrib_parsing_fail(contrib_str, contrib_id)
+        contrib_range_final = contrib_range_init        
     contrib = (contrib_0, contrib_splitted[1], contrib_range_init, contrib_range_final)
     print_contrib_interpretation(contrib, contrib_id)
     return contrib
